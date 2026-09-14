@@ -461,3 +461,18 @@ body {
   font-size: 0.8rem;
   color: var(--text-muted);
 }
+
+/* Container do iframe do Drive no player fixo */
+.player-frame-container {
+  width: 100%;
+  height: 56px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #0f172a;
+}
+
+.drive-audio-frame {
+  width: 100%;
+  height: 56px;
+  border: none;
+}

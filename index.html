@@ -12,7 +12,6 @@
 </head>
 <body>
   <div class="app-container">
-    <!-- Cabeçalho Institucional -->
     <header class="site-header">
       <div class="header-badge">Igreja Verbo da Vida • Resende</div>
       <h1 class="site-title">Áudios dos Cultos</h1>
@@ -23,7 +22,6 @@
       </div>
     </header>
 
-    <!-- Barra de Ferramentas: Busca e Filtros -->
     <section class="toolbar-section">
       <div class="search-box">
         <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -36,7 +34,6 @@
       <div class="results-meta" id="results-meta">Carregando catálogo...</div>
     </section>
 
-    <!-- Feedback de Estado -->
     <div id="loading-state" class="state-card loading-card">
       <div class="spinner"></div>
       <p>Buscando gravações disponíveis...</p>
@@ -47,16 +44,14 @@
       <button id="retry-btn" class="secondary-btn">Tentar novamente</button>
     </div>
 
-    <!-- Lista de Gravações -->
     <main id="tracks-container" class="tracks-grid" style="display: none;"></main>
 
-    <!-- Rodapé -->
     <footer class="site-footer">
       <p>© Ministério de Comunicação • Verbo da Vida Resende</p>
     </footer>
   </div>
 
-  <!-- Player de Áudio Persistente (Fixado no rodapé) -->
+  <!-- Player Persistente com suporte ao player embutido do Drive -->
   <aside id="sticky-player" class="sticky-player" style="display: none;">
     <div class="player-inner">
       <div class="player-track-info">
@@ -70,10 +65,10 @@
       </div>
       
       <div class="player-controls-wrap">
-        <audio id="main-audio-element" preload="metadata" controls></audio>
+        <div id="player-frame-container" class="player-frame-container"></div>
         <div class="player-fallback">
-          <a id="player-direct-link" href="#" target="_blank" rel="noopener noreferrer" class="direct-link-btn" title="Abrir no Google Drive se o áudio não iniciar">
-            Abrir arquivo original
+          <a id="player-direct-link" href="#" target="_blank" rel="noopener noreferrer" class="direct-link-btn">
+            Abrir arquivo no Google Drive ↗
           </a>
         </div>
       </div>
