@@ -1,7 +1,7 @@
 /**
  * Configuração da API do Google Apps Script
  */
-const APPS_SCRIPT_API_URL = "https://script.google.com/macros/s/AKfycbz..."; // Certifique-se de colar a sua URL terminada em /exec
+const APPS_SCRIPT_API_URL = "https://script.google.com/macros/s/AKfycbye7jKb6wMGN1g66CeCmMNfd7yaOtvdqpuMYhy1TQBxQ7-0LpUtCUC03ZWUHTej36RP/exec"; // Certifique-se de colar a sua URL terminada em /exec
 
 let catalogTracks = [];
 let currentFilteredTracks = [];
