@@ -1,13 +1,14 @@
 /**
- * Configuração da API do Google Apps Script
+ * Catálogo de Áudios dos Cultos — Verbo Resende
+ * API: Google Apps Script Web App
  */
-const APPS_SCRIPT_API_URL = "https://script.google.com/macros/s/AKfycbye7jKb6wMGN1g66CeCmMNfd7yaOtvdqpuMYhy1TQBxQ7-0LpUtCUC03ZWUHTej36RP/exec"; // Certifique-se de colar a sua URL terminada em /exec
+const APPS_SCRIPT_API_URL = "https://script.google.com/macros/s/AKfycbye7jKb6wMGN1g66CeCmMNfd7yaOtvdqpuMYhy1TQBxQ7-0LpUtCUC03ZWUHTej36RP/exec";
 
 let catalogTracks = [];
 let currentFilteredTracks = [];
 let activeTrackId = null;
 
-// Elementos do DOM
+// Elementos da Interface
 const tracksContainer = document.getElementById("tracks-container");
 const loadingState = document.getElementById("loading-state");
 const errorState = document.getElementById("error-state");
@@ -17,7 +18,7 @@ const searchInput = document.getElementById("search-input");
 const clearSearchBtn = document.getElementById("clear-search");
 const resultsMeta = document.getElementById("results-meta");
 
-// Elementos do Player Sticky
+// Player Inferior
 const stickyPlayer = document.getElementById("sticky-player");
 const playerAvatar = document.getElementById("player-avatar");
 const playerTitle = document.getElementById("player-title");
@@ -27,16 +28,47 @@ const closePlayerBtn = document.getElementById("close-player");
 const playerFrameContainer = document.getElementById("player-frame-container");
 
 /**
- * Carrega a lista de gravações da API do Apps Script
+ * Extrai o ID do Google Drive de uma string ou URL
+ */
+function extractDriveId(val) {
+  if (!val) return "";
+  if (/^[a-zA-Z0-9_-]{25,}$/.test(val)) return val;
+  const match = val.match(/id=([a-zA-Z0-9_-]+)/) || val.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  return match ? match[1] : val;
+}
+
+/**
+ * Retorna o link de imagem do CDN oficial do Google (evita erro 403 Forbidden)
+ */
+function getImageUrl(track) {
+  const rawId = track.imagem_id || track.imagemId || track.imagemUrl;
+  const id = extractDriveId(rawId);
+  return id ? `https://lh3.googleusercontent.com/d/${id}` : "";
+}
+
+/**
+ * Retorna a URL do player oficial embutido do Google Drive (/preview)
+ */
+function getAudioPreviewUrl(track) {
+  const rawId = track.audio_id || track.áudio_id || track.audioId || track.audioUrl;
+  const id = extractDriveId(rawId);
+  return id ? `https://drive.google.com/file/d/${id}/preview` : "";
+}
+
+/**
+ * Retorna a URL direta no Google Drive (/view)
+ */
+function getAudioDirectUrl(track) {
+  const rawId = track.audio_id || track.áudio_id || track.audioId || track.audioUrl;
+  const id = extractDriveId(rawId);
+  return id ? `https://drive.google.com/file/d/${id}/view` : "#";
+}
+
+/**
+ * Carrega a lista de cultos da API do Apps Script
  */
 async function fetchTracks() {
   showLoading();
-
-  if (!APPS_SCRIPT_API_URL || APPS_SCRIPT_API_URL.includes("...")) {
-    console.warn("URL da API precisa ser configurada no app.js.");
-    showError("Aguardando configuração da URL da API do Google Apps Script no arquivo app.js.");
-    return;
-  }
 
   try {
     const response = await fetch(APPS_SCRIPT_API_URL, { method: "GET" });
@@ -48,13 +80,13 @@ async function fetchTracks() {
     renderTracks(currentFilteredTracks);
     showContent();
   } catch (error) {
-    console.error("Erro ao carregar áudios:", error);
-    showError("Não foi possível carregar as gravações no momento. Verifique a implantação do Apps Script.");
+    console.error("Erro ao carregar catálogo:", error);
+    showError("Não foi possível carregar as gravações no momento. Tente novamente.");
   }
 }
 
 /**
- * Renderiza os cards na página
+ * Renderiza os cards das ministrações
  */
 function renderTracks(tracks) {
   tracksContainer.innerHTML = "";
@@ -62,7 +94,7 @@ function renderTracks(tracks) {
   if (tracks.length === 0) {
     tracksContainer.innerHTML = `
       <div class="state-card" style="grid-column: 1 / -1;">
-        <p>Nenhuma gravação encontrada com os filtros selecionados.</p>
+        <p>Nenhuma gravação encontrada com os termos buscados.</p>
       </div>
     `;
     resultsMeta.textContent = "0 gravações encontradas";
@@ -72,13 +104,12 @@ function renderTracks(tracks) {
   resultsMeta.textContent = `${tracks.length} ${tracks.length === 1 ? "gravação disponível" : "gravações disponíveis"}`;
 
   tracks.forEach((track) => {
+    const audioId = extractDriveId(track.audio_id || track.áudio_id || track.audioUrl);
     const card = document.createElement("article");
-    card.className = `track-card ${activeTrackId === track.audio_id ? "is-active" : ""}`;
-    card.id = `card-${track.audio_id}`;
+    card.className = `track-card ${activeTrackId === audioId ? "is-active" : ""}`;
+    card.id = `card-${audioId}`;
 
-    // Link de imagem usando o CDN público do Google
-    const imgUrl = track.imagemUrl || (track.imagem_id ? `https://lh3.googleusercontent.com/d/${track.imagem_id}` : "");
-
+    const imgUrl = getImageUrl(track);
     const avatarHtml = imgUrl
       ? `<img src="${imgUrl}" alt="Foto de ${escapeHtml(track.ministro || 'Ministro')}" loading="lazy" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\\'track-avatar-placeholder\\'>VDV</div>';" />`
       : `<div class="track-avatar-placeholder">VDV</div>`;
@@ -109,19 +140,20 @@ function renderTracks(tracks) {
 }
 
 /**
- * Ativa a reprodução com o player oficial embutido do Google Drive
+ * Dispara a reprodução no player embutido do Google Drive
  */
 function playTrack(track) {
-  activeTrackId = track.audio_id;
+  const audioId = extractDriveId(track.audio_id || track.áudio_id || track.audioUrl);
+  activeTrackId = audioId;
   
   document.querySelectorAll(".track-card").forEach(c => c.classList.remove("is-active"));
-  const activeCard = document.getElementById(`card-${track.audio_id}`);
+  const activeCard = document.getElementById(`card-${audioId}`);
   if (activeCard) activeCard.classList.add("is-active");
 
-  playerTitle.textContent = track.titulo;
+  playerTitle.textContent = track.titulo || "Gravação do Culto";
   playerMeta.textContent = [track.ministro, track.data].filter(Boolean).join(" • ");
   
-  const imgUrl = track.imagemUrl || (track.imagem_id ? `https://lh3.googleusercontent.com/d/${track.imagem_id}` : "");
+  const imgUrl = getImageUrl(track);
   if (imgUrl) {
     playerAvatar.src = imgUrl;
     playerAvatar.style.display = "block";
@@ -129,13 +161,13 @@ function playTrack(track) {
     playerAvatar.style.display = "none";
   }
 
-  const directUrl = track.audioDirectUrl || `https://drive.google.com/file/d/${track.audio_id}/view`;
-  playerDirectLink.href = directUrl;
+  // Link direto para abrir no Google Drive
+  playerDirectLink.href = getAudioDirectUrl(track);
 
-  // Carrega o player embutido do Drive via iframe (resolve o erro 403 de streaming)
-  const previewUrl = track.audioPreviewUrl || `https://drive.google.com/file/d/${track.audio_id}/preview`;
+  // Player oficial do Google Drive embutido via iframe
+  const previewUrl = getAudioPreviewUrl(track);
   playerFrameContainer.innerHTML = `
-    <iframe src="${previewUrl}" class="drive-audio-frame" allow="autoplay" title="Player de Áudio"></iframe>
+    <iframe src="${previewUrl}" class="drive-audio-frame" allow="autoplay" title="Player de Áudio Oficial do Google Drive"></iframe>
   `;
 
   stickyPlayer.style.display = "block";
