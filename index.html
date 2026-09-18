@@ -51,7 +51,7 @@
     </footer>
   </div>
 
-  <!-- Player Persistente com Player Oficial Embutido do Drive -->
+  <!-- Player Persistente com Áudio Nativo Instantâneo e Fallback Google Drive -->
   <aside id="sticky-player" class="sticky-player" style="display: none;">
     <div class="player-inner">
       <div class="player-track-info">
@@ -65,8 +65,20 @@
       </div>
       
       <div class="player-controls-wrap">
-        <div id="player-frame-container" class="player-frame-container"></div>
+        <!-- Player de Áudio Nativo com Início Imediato -->
+        <div id="player-audio-container" class="player-audio-container">
+          <audio id="main-audio" controls preload="auto" playsinline class="custom-audio-element">
+            Seu navegador não suporta reprodução de áudio.
+          </audio>
+        </div>
+
+        <!-- Container alternativo caso use iframe do Google Drive -->
+        <div id="player-frame-container" class="player-frame-container" style="display: none;"></div>
+
         <div class="player-fallback">
+          <button id="toggle-drive-frame-btn" class="toggle-frame-btn" type="button">
+            Usar player do Google Drive
+          </button>
           <a id="player-direct-link" href="#" target="_blank" rel="noopener noreferrer" class="direct-link-btn">
             Abrir arquivo no Google Drive ↗
           </a>

@@ -25,7 +25,10 @@ const playerTitle = document.getElementById("player-title");
 const playerMeta = document.getElementById("player-meta");
 const playerDirectLink = document.getElementById("player-direct-link");
 const closePlayerBtn = document.getElementById("close-player");
+const playerAudioContainer = document.getElementById("player-audio-container");
+const mainAudio = document.getElementById("main-audio");
 const playerFrameContainer = document.getElementById("player-frame-container");
+const toggleDriveFrameBtn = document.getElementById("toggle-drive-frame-btn");
 
 /**
  * Extrai o ID do Google Drive de uma string ou URL
@@ -132,6 +135,15 @@ function renderTracks(tracks) {
     `;
 
     card.addEventListener("click", () => {
+      // Se clicar no card que já está tocando no player nativo, alterna play/pause
+      if (activeTrackId === audioId && mainAudio && mainAudio.src && playerAudioContainer.style.display !== "none") {
+        if (mainAudio.paused) {
+          mainAudio.play().catch(() => {});
+        } else {
+          mainAudio.pause();
+        }
+        return;
+      }
       playTrack(track);
     });
 
@@ -140,7 +152,7 @@ function renderTracks(tracks) {
 }
 
 /**
- * Dispara a reprodução no player embutido do Google Drive
+ * Dispara a reprodução no player nativo com início imediato
  */
 function playTrack(track) {
   const audioId = extractDriveId(track.audio_id || track.áudio_id || track.audioUrl);
@@ -164,14 +176,87 @@ function playTrack(track) {
   // Link direto para abrir no Google Drive
   playerDirectLink.href = getAudioDirectUrl(track);
 
-  // Player oficial do Google Drive embutido via iframe
-  const previewUrl = getAudioPreviewUrl(track);
-  playerFrameContainer.innerHTML = `
-    <iframe src="${previewUrl}" class="drive-audio-frame" allow="autoplay" title="Player de Áudio Oficial do Google Drive"></iframe>
-  `;
+  // Integração com a barra de mídia e tela de bloqueio do celular
+  if ("mediaSession" in navigator) {
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: track.titulo || "Gravação do Culto",
+        artist: track.ministro || "Igreja Verbo da Vida Resende",
+        album: "Áudios dos Cultos",
+        artwork: imgUrl ? [{ src: imgUrl, sizes: "512x512", type: "image/jpeg" }] : []
+      });
+    } catch (e) {
+      console.warn("MediaSession não pôde ser configurado:", e);
+    }
+  }
+
+  // Reseta visualização para o player de áudio nativo (toca no 1º clique)
+  playerFrameContainer.style.display = "none";
+  playerFrameContainer.innerHTML = "";
+  playerAudioContainer.style.display = "block";
+  toggleDriveFrameBtn.textContent = "Usar player do Google Drive";
+
+  // URL de streaming direto do arquivo MP3 no Google Drive
+  const directAudioUrl = `https://drive.google.com/uc?export=download&id=${audioId}`;
+
+  mainAudio.src = directAudioUrl;
+  mainAudio.load();
+
+  // O clique do usuário no card é uma ação direta de interação, permitindo play() imediato
+  const playPromise = mainAudio.play();
+  if (playPromise !== undefined) {
+    playPromise.catch((error) => {
+      console.warn("Autoplay imediato bloqueado ou aguardando buffer:", error);
+    });
+  }
 
   stickyPlayer.style.display = "block";
 }
+
+/**
+ * Alterna para o iframe embutido do Google Drive
+ */
+function switchToDriveIframe() {
+  if (!activeTrackId) return;
+  const previewUrl = `https://drive.google.com/file/d/${activeTrackId}/preview`;
+  playerFrameContainer.innerHTML = `
+    <iframe src="${previewUrl}" class="drive-audio-frame" allow="autoplay" title="Player de Áudio Oficial do Google Drive"></iframe>
+  `;
+  playerAudioContainer.style.display = "none";
+  playerFrameContainer.style.display = "block";
+  toggleDriveFrameBtn.textContent = "Voltar ao player nativo";
+  
+  if (mainAudio) {
+    mainAudio.pause();
+  }
+}
+
+/**
+ * Fallback automático: se o link direto apresentar erro, ativa o player do Drive
+ */
+mainAudio.addEventListener("error", () => {
+  if (mainAudio.src && activeTrackId) {
+    console.warn("Falha no link direto de áudio. Alternando para o player do Google Drive...");
+    switchToDriveIframe();
+  }
+});
+
+/**
+ * Botão para alternar manualmente entre Player Direto e Player do Drive
+ */
+toggleDriveFrameBtn.addEventListener("click", () => {
+  if (playerFrameContainer.style.display === "none") {
+    switchToDriveIframe();
+  } else {
+    playerFrameContainer.style.display = "none";
+    playerFrameContainer.innerHTML = "";
+    playerAudioContainer.style.display = "block";
+    toggleDriveFrameBtn.textContent = "Usar player do Google Drive";
+    if (mainAudio && mainAudio.src) {
+      mainAudio.play().catch(() => {});
+    }
+  }
+});
 
 function handleSearch() {
   const query = searchInput.value.trim().toLowerCase();
@@ -228,9 +313,17 @@ clearSearchBtn.addEventListener("click", () => {
   searchInput.focus();
 });
 retryBtn.addEventListener("click", fetchTracks);
+
 closePlayerBtn.addEventListener("click", () => {
+  if (mainAudio) {
+    mainAudio.pause();
+    mainAudio.removeAttribute("src");
+    mainAudio.load();
+  }
   playerFrameContainer.innerHTML = "";
   stickyPlayer.style.display = "none";
+  activeTrackId = null;
+  document.querySelectorAll(".track-card").forEach(c => c.classList.remove("is-active"));
 });
 
 document.addEventListener("DOMContentLoaded", fetchTracks);
