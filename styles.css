@@ -159,10 +159,10 @@ body {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-lg);
-  padding: 1rem 1.15rem;
+  padding: 1.15rem 1.35rem;             /* Leve ajuste de espaçamento interno */
   display: grid;
-  grid-template-columns: 80px 1fr auto;
-  gap: 1.15rem;
+  grid-template-columns: auto 1fr auto;  /* Coluna da imagem automática para acompanhar o novo tamanho */
+  gap: 1.35rem;                          /* Mais respiro entre a imagem e as informações */
   align-items: center;
   transition: transform 0.15s ease, border-color 0.15s ease;
   cursor: pointer;
@@ -179,9 +179,9 @@ body {
 }
 
 .track-avatar-wrap {
-  width: 76px;
-  height: 76px;
-  border-radius: 50%;
+  width: 110px;                          /* Aumentado de 76px para 110px */
+  height: 110px;                         /* Aumentado de 76px para 110px */
+  border-radius: 50%;                    /* Mantém redondo (ou use 14px se preferir estilo capa quadrada) */
   overflow: hidden;
   background: #0f172a;
   border: 2px solid var(--card-border);
@@ -200,7 +200,7 @@ body {
 .track-avatar-placeholder {
   color: var(--accent-blue);
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: 1.4rem;                     /* Aumentado para acompanhar o círculo maior */
   text-align: center;
 }
 
